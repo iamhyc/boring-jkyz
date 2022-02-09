@@ -79,6 +79,7 @@ def get_list():
         try:
             res = session.post('https://hk.sz.gov.cn/districtHousenumLog/getList', timeout=TIMEOUT)
         except:
+            halo_info.fail()
             return
         #
         if res.status_code == 502:
