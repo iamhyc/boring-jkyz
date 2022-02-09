@@ -88,6 +88,7 @@ def get_list():
         elif res.status_code == 304:
             halo_info.fail( 'Session expired. Try login again.' )
             STATUS = 'NONE'
+            return
         elif res.status_code != 200:
             print( res.status_code, res.text )
         else:
@@ -128,6 +129,9 @@ def confirm_order():
     #
     print('In confirm page:')
     print( res.status_code, res.text )
+    #
+    halo_info.succeed( 'Enjoy your journey~' )
+    print(_ITEM)
     STATUS = 'FINISHED'
 
 if __name__=='__main__':
@@ -141,5 +145,3 @@ if __name__=='__main__':
     while STATUS!='FINISHED':
         STATE_DRIVER[STATUS]()
     
-    halo_info.succeed( 'Enjoy your journey~' )
-    print(_ITEM)
