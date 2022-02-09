@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import re, time, json, random
+from socket import timeout
 import requests
 import ddddocr
 import halo
 
 STATUS = 'NONE'
 _ITEM  = dict()
+TIMEOUT = 5
 
 ocr = ddddocr.DdddOcr()
 session = requests.Session()
@@ -28,13 +30,19 @@ def login():
         while not got_verify_code:
             time.sleep( random.random() )
             _id = random.random()
-            res = session.get( f'https://hk.sz.gov.cn/user/getVerify?{_id}' )
+            try:
+                res = session.get( f'https://hk.sz.gov.cn/user/getVerify?{_id}', timeout=TIMEOUT )
+            except:
+                return
             if res.status_code == 200:
                 got_verify_code = True
         #
         verifyCode = ocr.classification( res.content )
         ACCOUNT_INFO.update({ "verifyCode" : verifyCode })
-        res = session.post( 'https://hk.sz.gov.cn/user/login', data=ACCOUNT_INFO )
+        try:
+            res = session.post( 'https://hk.sz.gov.cn/user/login', data=ACCOUNT_INFO, timeout=TIMEOUT )
+        except:
+            return
         #
         login_flag = (res.json()['status'] == 200)
     #
@@ -46,7 +54,10 @@ def can_reserve():
     halo_info.start()
     halo_info.text = 'Checking booking status ...'
 
-    res = session.post('https://hk.sz.gov.cn/passInfo/userCenterIsCanReserve')
+    try:
+        res = session.post('https://hk.sz.gov.cn/passInfo/userCenterIsCanReserve')
+    except:
+        return
     content = res.json()
     if content['status'] == 200:
         halo_info.succeed( 'Now can reserve.' )
@@ -65,7 +76,10 @@ def get_list():
     got_slot = False
     _counter = 0
     while not got_slot:
-        res = session.post('https://hk.sz.gov.cn/districtHousenumLog/getList')
+        try:
+            res = session.post('https://hk.sz.gov.cn/districtHousenumLog/getList', timeout=TIMEOUT)
+        except:
+            return
         #
         if res.status_code == 502:
             halo_info.fail( '502 Bad Gateway. Nothing serious.' )
@@ -99,7 +113,10 @@ def confirm_order():
     halo_info.text = 'TRY TO CONFIRM ORDER!'
 
     _url = f"https://hk.sz.gov.cn/passInfo/confirmOrder?checkinDate=${_ITEM['date']}&t=${_ITEM['timespan']}&s=${_ITEM['sign']}"
-    res  = session.get(_url)
+    try:
+        res  = session.get(_url, timeout=TIMEOUT)
+    except:
+        return
     content = res.json()
     #
     if content['status'] == 500:
