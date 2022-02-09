@@ -52,7 +52,9 @@ def can_reserve():
         halo_info.succeed( 'Now can reserve.' )
         STATUS = 'CAN_RESERVE'
     else:
-        halo_info.fail( 'Cannot reserve: {}'.format(content) )
+        halo_info.fail( 'Cannot reserve. Try 15s later.' )
+        print(content)
+        time.sleep(15)
         return
 
 def get_list():
@@ -65,10 +67,14 @@ def get_list():
     while not got_slot:
         res = session.post('https://hk.sz.gov.cn/districtHousenumLog/getList')
         #
-        if res.status_code != 200:
-            halo_info.fail( 'Session expired. Try to login again.' )
-            STATUS = 'LOGIN'
+        if res.status_code == 502:
+            halo_info.fail( '502 Bad Gateway. Nothing serious.' )
             return
+        elif res.status_code == 304:
+            halo_info.fail( 'Session expired. Try login again.' )
+            STATUS = 'NONE'
+        elif res.status_code != 200:
+            print( res.status_code, res.text )
         else:
             content = res.json()
             for item in content['data']:
