@@ -63,7 +63,7 @@ def get_list():
     halo_info.text = "Checking booking list ..."
 
     got_slot = False
-    _count   = 0
+    _counter = 0
     while not got_slot:
         res = session.post('https://hk.sz.gov.cn/districtHousenumLog/getList')
         #
@@ -77,18 +77,19 @@ def get_list():
             print( res.status_code, res.text )
         else:
             content = res.json()
-            for item in content['data']:
+            for item in content['data'][::-1]:
                 if item['count'] > 0:
                     _ITEM = {
                         'date': item['date'],
                         'timespan': item['timespan'],
                         'sign': item['sign']
                     }
+                    halo_info.succeed( f'Find slot on {item["date"]}, {item["count"]} left.' )
                     got_slot = True
                 pass
         #
-        _count += 1
-        halo_info.text = f'No hope, try later ({_count}) ...'
+        _counter += 1
+        halo_info.text = f'No hope, try later ({_counter}) ...'
         time.sleep( 1 + random.random() )
     STATUS = 'GET_LIST'
 
