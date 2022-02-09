@@ -56,16 +56,16 @@ def can_reserve():
 
     try:
         res = session.post('https://hk.sz.gov.cn/passInfo/userCenterIsCanReserve')
+        content = res.json()
     except:
         return
-    content = res.json()
     if content['status'] == 200:
         halo_info.succeed( 'Now can reserve.' )
         STATUS = 'CAN_RESERVE'
     else:
-        halo_info.fail( 'Cannot reserve. Try 15s later.' )
+        halo_info.fail( 'Cannot reserve. Try 30s later.' )
         print(content)
-        time.sleep(15)
+        time.sleep(30)
         return
 
 def get_list():
@@ -79,11 +79,11 @@ def get_list():
         try:
             res = session.post('https://hk.sz.gov.cn/districtHousenumLog/getList', timeout=TIMEOUT)
         except:
-            halo_info.fail()
+            halo_info.info()
             return
         #
         if res.status_code == 502:
-            halo_info.fail( '502 Bad Gateway. Nothing serious.' )
+            halo_info.info( '502 Bad Gateway. Nothing serious.' )
             return
         elif res.status_code == 304:
             halo_info.fail( 'Session expired. Try login again.' )
@@ -91,18 +91,23 @@ def get_list():
             return
         elif res.status_code != 200:
             print( res.status_code, res.text )
+            return
         else:
-            content = res.json()
-            for item in content['data'][::-1]:
-                if item['count'] > 0:
-                    _ITEM = {
-                        'date': item['date'],
-                        'timespan': item['timespan'],
-                        'sign': item['sign']
-                    }
-                    halo_info.succeed( f'Find slot on {item["date"]}, {item["count"]} left.' )
-                    got_slot = True
+            try:
+                content = res.json()
+            except:
                 pass
+            else:
+                for item in content['data'][::-1]:
+                    if item['count'] > 0:
+                        _ITEM = {
+                            'date': item['date'],
+                            'timespan': item['timespan'],
+                            'sign': item['sign']
+                        }
+                        halo_info.succeed( f'Find slot on {item["date"]}, {item["count"]} left.' )
+                        got_slot = True
+                    pass
         #
         _counter += 1
         halo_info.text = f'No hope, try later ({_counter}) ...'
