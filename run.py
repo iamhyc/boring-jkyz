@@ -63,9 +63,9 @@ def can_reserve():
         halo_info.succeed( 'Now can reserve.' )
         STATUS = 'CAN_RESERVE'
     else:
-        halo_info.fail( 'Cannot reserve. Try 30s later.' )
-        print(content)
-        time.sleep(30)
+        halo_info.text = 'Cannot reserve, waiting ...'
+        # print(content)
+        time.sleep(3)
         return
 
 def get_list():
@@ -120,6 +120,8 @@ def confirm_order():
     halo_info.text = 'TRY TO CONFIRM ORDER!'
 
     _url = f"https://hk.sz.gov.cn/passInfo/confirmOrder?checkinDate=${_ITEM['date']}&t=${_ITEM['timespan']}&s=${_ITEM['sign']}"
+    print(_url)
+
     try:
         res  = session.get(_url, timeout=TIMEOUT)
     except:
@@ -129,7 +131,7 @@ def confirm_order():
     if content['status'] == 500:
         halo_info.fail( 'Booking failed, back to list fetching.' )
         print(content)
-        STATUS = 'GET_LIST'
+        STATUS = 'CAN_RESERVE'
         return
     #
     print('In confirm page:')
