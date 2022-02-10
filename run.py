@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import re, time, json, random
-from socket import timeout
+import subprocess as sp
 import requests
 import ddddocr
 import halo
@@ -104,7 +104,9 @@ def get_list():
                             'timespan': item['timespan'],
                             'sign': item['sign']
                         }
-                        halo_info.succeed( f'Find slot on {item["date"]}, {item["count"]} left.' )
+                        _msg = f'Find slot on {item["date"]}, {item["count"]} left.'
+                        halo_info.succeed( _msg )
+                        sp.run(f'notify-send "{_msg}"', shell=True)
                         got_slot = True
                     pass
         #
