@@ -62,10 +62,16 @@ def can_reserve():
     if content['status'] == 200:
         halo_info.succeed( 'Now can reserve.' )
         STATUS = 'CAN_RESERVE'
-    else:
+    elif content['status'] == 304:
+        halo_info.fail( 'Session expired. Try login again.' )
+        STATUS = 'NONE'
+    elif content['status'] == 500:
         halo_info.text = 'Cannot reserve, waiting ...'
-        # print(content)
         time.sleep(3)
+    else:
+        halo_info.fail( f'Unknown status, reset session.' )
+        print( content )
+        STATUS = 'NONE'
         return
 
 def get_list():
