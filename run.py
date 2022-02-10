@@ -131,7 +131,7 @@ def confirm_order():
     halo_info.start()
     halo_info.text = 'TRY TO CONFIRM ORDER!'
 
-    _url = f"https://hk.sz.gov.cn/passInfo/confirmOrder?checkinDate=${_ITEM['date']}&t=${_ITEM['timespan']}&s=${_ITEM['sign']}"
+    _url = f'https://hk.sz.gov.cn/passInfo/confirmOrder?checkinDate={_ITEM['date']}&t={_ITEM['timespan']}&s={_ITEM['sign']}'
     print(_url)
 
     try:
