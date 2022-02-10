@@ -57,8 +57,13 @@ def can_reserve():
     try:
         res = session.post('https://hk.sz.gov.cn/passInfo/userCenterIsCanReserve', timeout=TIMEOUT)
         content = res.json()
-    except:
+    except requests.exceptions.RequestException:
         return
+    except:
+        halo_info.fail( 'Unknown condition, reset session.' )
+        STATUS = 'NONE'
+        return
+    #
     if content['status'] == 200:
         halo_info.succeed( 'Now can reserve.' )
         STATUS = 'CAN_RESERVE'
