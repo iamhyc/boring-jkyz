@@ -79,8 +79,7 @@ def get_list():
         try:
             res = session.post('https://hk.sz.gov.cn/districtHousenumLog/getList', timeout=TIMEOUT)
         except:
-            halo_info.info()
-            return
+            continue
         #
         if res.status_code == 502:
             halo_info.info( '502 Bad Gateway. Nothing serious.' )
@@ -91,7 +90,7 @@ def get_list():
             return
         elif res.status_code != 200:
             print( res.status_code, res.text )
-            return
+            continue
         else:
             try:
                 content = res.json()
