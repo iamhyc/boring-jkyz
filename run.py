@@ -55,7 +55,7 @@ def can_reserve():
     halo_info.text = 'Checking booking status ...'
 
     try:
-        res = session.post('https://hk.sz.gov.cn/passInfo/userCenterIsCanReserve')
+        res = session.post('https://hk.sz.gov.cn/passInfo/userCenterIsCanReserve', timeout=TIMEOUT)
         content = res.json()
     except:
         return
