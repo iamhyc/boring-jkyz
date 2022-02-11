@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 import re, time, json, random
+from site import venv
 import subprocess as sp
 import requests
 import ddddocr
 import halo
 
+#---------------------- Preference ------------------------#
+PREFER_DATES = list() #e.g., ['2022-02-22']
+
+#---------------------- Code Area -------------------------#
 STATUS = 'NONE'
 _ITEM  = dict()
 TIMEOUT = 5
@@ -19,6 +24,23 @@ halo_info = halo.Halo()
 with open('config.json') as f:
     ACCOUNT_INFO = json.load(f)
 
+def _get_verify_code():
+    got_verify_code = False
+    while not got_verify_code:
+        time.sleep( random.random() )
+        _id = random.random()
+        try:
+            res = session.get( f'https://hk.sz.gov.cn/user/getVerify?{_id}', timeout=TIMEOUT )
+        except:
+            continue
+        if res.status_code == 200:
+            got_verify_code = True
+        else:
+            print( res.status_code, res.text )
+    #
+    verifyCode = ocr.classification( res.content )
+    return verifyCode
+
 def login():
     global STATUS, _ITEM
     halo_info.start()
@@ -26,18 +48,7 @@ def login():
     #
     login_flag = False
     while not login_flag:
-        got_verify_code = False
-        while not got_verify_code:
-            time.sleep( random.random() )
-            _id = random.random()
-            try:
-                res = session.get( f'https://hk.sz.gov.cn/user/getVerify?{_id}', timeout=TIMEOUT )
-            except:
-                return
-            if res.status_code == 200:
-                got_verify_code = True
-        #
-        verifyCode = ocr.classification( res.content )
+        verifyCode = _get_verify_code()
         ACCOUNT_INFO.update({ "verifyCode" : verifyCode })
         try:
             res = session.post( 'https://hk.sz.gov.cn/user/login', data=ACCOUNT_INFO, timeout=TIMEOUT )
@@ -109,7 +120,7 @@ def get_list():
                 pass
             else:
                 for item in content['data'][::-1]:
-                    if item['count'] > 0:
+                    if item['count'] > 0 and (item['date'] in PREFER_DATES):
                         _ITEM = {
                             'date': item['date'],
                             'timespan': item['timespan'],
@@ -131,27 +142,43 @@ def confirm_order():
     halo_info.start()
     halo_info.text = 'TRY TO CONFIRM ORDER!'
 
-    _url = f'https://hk.sz.gov.cn/passInfo/confirmOrder?checkinDate={_ITEM["date"]}&t={_ITEM["timespan"]}&s={_ITEM["sign"]}'
+    _url = 'https://hk.sz.gov.cn/passInfo/confirmOrder?checkinDate={checkinDate}&t={t}&s={s}'.format(
+        checkinDate=_ITEM["date"], t=_ITEM["timespan"], s=_ITEM["sign"]
+    )
     print(_url)
-
     try:
         res  = session.get(_url, timeout=TIMEOUT)
     except:
         return
-    content = res.json()
     #
-    if content['status'] == 500:
+    if res.status_code == 200:
+        checkCode = _get_verify_code()
+        data = {
+            'checkinDate': _ITEM['date'],
+            'checkCode'  : checkCode,
+            'houseType'  : 1,
+            't'          : _ITEM['timespan'],
+            's'          : _ITEM['sign']
+        }
+        #
+        try:
+            res = session.post('https://hk.sz.gov.cn/passInfo/submitReservation', data=data, timeout=TIMEOUT)
+            content = res.json()
+        except:
+            return
+        #
+        if content['status'] == 200:
+            halo_info.succeed( 'Enjoy your journey~' )
+            STATUS = 'FINISHED'
+    elif res.status_code == 500:
         halo_info.fail( 'Booking failed, back to list fetching.' )
-        print(content)
         STATUS = 'CAN_RESERVE'
         return
-    #
-    print('In confirm page:')
-    print( res.status_code, res.text )
-    #
-    halo_info.succeed( 'Enjoy your journey~' )
-    print(_ITEM)
-    STATUS = 'FINISHED'
+    else:
+        halo_info.fail( 'Unknown condition, back to list fetching.' )
+        STATUS = 'CAN_RESERVE'
+        return
+    pass   
 
 if __name__=='__main__':
     STATE_DRIVER = {
